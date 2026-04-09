@@ -55,15 +55,10 @@ function fetchSheet() {
     return;
   }
 
-  // Pad to 4 digits
-  id = id.replace(/^0+/, '');
-  var padded = ('0000' + id).slice(-4);
-
-  document.title = 'チケット No.' + padded;
-
+  // Search by random QR_ID (column V)
   var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
     '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(SHEET_NAME) +
-    '&tq=' + encodeURIComponent("SELECT * WHERE A = '" + padded + "'");
+    '&tq=' + encodeURIComponent("SELECT * WHERE V = '" + id + "'");
 
   var script = document.createElement('script');
   var cbName = 'cb_' + Date.now();
@@ -80,7 +75,7 @@ function fetchSheet() {
       var json = JSON.parse(text.match(/\{.*\}/s)[0]);
 
       if (!json.table || !json.table.rows || json.table.rows.length === 0) {
-        showContent('<h1 class="error">エラー</h1><p>チケット番号 ' + padded + ' は見つかりませんでした。</p>');
+        showContent('<h1 class="error">エラー</h1><p>チケットが見つかりませんでした。</p>');
         return;
       }
 
