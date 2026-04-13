@@ -31,7 +31,7 @@ h1{font-size:1.3em;margin-bottom:20px}
 
 <script>
 var SHEET_ID = '1Ut6VmPQPLXhHCduh4w01ccwpYP95gj-O6GpT5mkhTk4';
-var SHEETS = ['7月11日 KDDI維新ホール', '7月12日 ルネッサ長門'];
+var SHEETS = ['7/11 KDDI', '7/12 ルネッサ'];
 
 function getParam(name) {
   var url = new URL(window.location.href);
@@ -55,7 +55,7 @@ function fetchSheet() {
     return;
   }
 
-  // Search across both day sheets by random QR_ID (column V)
+  // Search across both day sheets by random QR_ID (column U)
   searchSheets(SHEETS, id, mode);
 }
 
@@ -67,7 +67,7 @@ function searchSheets(sheetList, id, mode, idx) {
   }
   var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
     '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(sheetList[idx]) +
-    '&tq=' + encodeURIComponent("SELECT * WHERE V = '" + id + "'");
+    '&tq=' + encodeURIComponent("SELECT * WHERE U = '" + id + "'");
 
   fetch(url)
     .then(function(r) { return r.text(); })
@@ -79,14 +79,13 @@ function searchSheets(sheetList, id, mode, idx) {
       }
       var row = json.table.rows[0].c;
       var ticket = {
-        no: val(row[0]),
-        venue: val(row[1]),
-        rowNum: val(row[2]),
-        seatNum: val(row[3]),
-        seatType: val(row[4]),
-        name: val(row[5]),
-        status: val(row[19]),
-        checkinTime: val(row[20])
+        no: val(row[3]),       // D: No.
+        rowNum: val(row[4]),   // E: 列
+        seatNum: val(row[5]),  // F: 席
+        seatType: val(row[6]), // G: 種別
+        name: val(row[7]),     // H: 予約者名
+        venue: sheetList[idx], // シート名から
+        checkinTime: val(row[19]) // T: チェックイン
       };
       if (mode === 'checkin') {
         showCheckin(ticket);
@@ -105,7 +104,7 @@ function val(cell) {
 }
 
 function showInfo(t) {
-  if (t.status === '未割当' || !t.seatNum) {
+  if (!t.seatNum) {
     showContent(
       '<h1 class="pending">チケット No.' + t.no + '</h1>' +
       '<div class="info">' +
@@ -147,13 +146,9 @@ function showCheckin(t) {
     return;
   }
 
-  // For checkin, we still need Apps Script to write to the sheet
-  // Show info and provide checkin link to Apps Script
   var seat = '';
   if (t.rowNum && t.seatNum) seat = t.rowNum + '列 ' + t.seatNum + '番';
   else if (t.seatNum) seat = t.seatNum;
-
-  var appsScriptUrl = 'https://script.google.com/macros/s/AKfycbwdFA224Tx0LsPzmNtDAwREVwzjx_R5LwDa_5Fg2z82jUI_R4GO46Qa9fC8l2B6mq5Dvw/exec?id=' + t.no + '&mode=checkin';
 
   showContent(
     '<h1 class="success">チケット No.' + t.no + '</h1>' +
@@ -163,7 +158,7 @@ function showCheckin(t) {
     (seat ? '座席: <span class="seat">' + seat + '</span><br>' : '') +
     (t.name ? '<div class="name">予約者: ' + t.name + '</div>' : '') +
     '</div>' +
-    '<a class="checkin-btn" href="' + appsScriptUrl + '">チェックインを実行</a>'
+    '<p style="margin-top:15px;color:#888;font-size:.85em">チェックインは受付スタッフが処理します</p>'
   );
 }
 
