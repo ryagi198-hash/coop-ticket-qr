@@ -55,7 +55,7 @@ function fetchSheet() {
     return;
   }
 
-  // Search across both day sheets by random QR_ID (column U)
+  // Search across both day sheets by random QR_ID (column W)
   searchSheets(SHEETS, id, mode);
 }
 
@@ -67,7 +67,7 @@ function searchSheets(sheetList, id, mode, idx) {
   }
   var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
     '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(sheetList[idx]) +
-    '&tq=' + encodeURIComponent("SELECT * WHERE U = '" + id + "'");
+    '&tq=' + encodeURIComponent("SELECT * WHERE W = '" + id + "'");
 
   fetch(url)
     .then(function(r) { return r.text(); })
@@ -85,7 +85,7 @@ function searchSheets(sheetList, id, mode, idx) {
         seatType: val(row[6]), // G: 種別
         name: val(row[7]),     // H: 予約者名
         venue: sheetList[idx], // シート名から
-        checkinTime: val(row[19]) // T: チェックイン
+        checkinTime: val(row[21]) // V: チェックイン
       };
       if (mode === 'checkin') {
         showCheckin(ticket);
