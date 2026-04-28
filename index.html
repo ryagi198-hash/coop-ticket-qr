@@ -32,6 +32,10 @@ h1{font-size:1.3em;margin-bottom:20px}
 <script>
 var SHEET_ID = '1Ut6VmPQPLXhHCduh4w01ccwpYP95gj-O6GpT5mkhTk4';
 var SHEETS = ['7/11 KDDI', '7/12 ルネッサ'];
+var VENUE_DISPLAY = {
+  '7/11 KDDI':    'KDDI維新ホール（山口市）',
+  '7/12 ルネッサ': 'ルネッサながと（長門市）'
+};
 
 function getParam(name) {
   var url = new URL(window.location.href);
@@ -84,7 +88,7 @@ function searchSheets(sheetList, id, mode, idx) {
         seatNum: val(row[5]),  // F: 席
         seatType: val(row[6]), // G: 種別
         name: val(row[7]),     // H: 予約者名
-        venue: sheetList[idx], // シート名から
+        venue: VENUE_DISPLAY[sheetList[idx]] || sheetList[idx], // 正式会場名
         checkinTime: val(row[21]) // V: チェックイン
       };
       if (mode === 'checkin') {
