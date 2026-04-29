@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>リダイレクト中...</title>
+</head>
+<body>
+<p>しばらくお待ちください...</p>
+<script>
+var SHEET_ID = '1tcisu-nMumnNQqiRBSolzY_jBECfjIRpAd_RsJdkx7w';
+
+function getParam(name) {
+  return new URL(window.location.href).searchParams.get(name);
+}
+
+var tagId = getParam('id');
+if (!tagId) {
+  document.body.innerHTML = '<p>IDが指定されていません。</p>';
+} else {
+  var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
+    '/gviz/tq?tqx=out:json&sheet=tags';
+  fetch(url)
+    .then(function(r) { return r.text(); })
+    .then(function(text) {
+      var json = JSON.parse(text.match(/\{.*\}/s)[0]);
+      var rows = json.table.rows;
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i].c;
+        if (row[0] && String(row[0].v) === String(tagId)) {
+          var dest = row[2] && row[2].v;
+          if (dest) {
+            window.location.replace(dest);
+            return;
+          }
+        }
+      }
+      document.body.innerHTML = '<p>タグが見つかりませんでした。</p>';
+    })
+    .catch(function() {
+      document.body.innerHTML = '<p>読み込みエラー。</p>';
+    });
+}
+</script>
+</body>
+</html>
