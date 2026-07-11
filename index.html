@@ -9,164 +9,19 @@
 body{font-family:-apple-system,'Hiragino Sans',sans-serif;background:#f5f5f5;padding:20px;text-align:center}
 .card{max-width:400px;margin:40px auto;padding:30px;background:#fff;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
 .logo{font-size:.9em;color:#888;margin-bottom:15px}
-h1{font-size:1.3em;margin-bottom:20px}
-.info{font-size:1.2em;margin:20px 0;line-height:1.8}
-.seat{font-size:1.8em;color:#e67e22;font-weight:bold}
-.venue{font-weight:bold}
-.loading{color:#888}
-.error{color:#e74c3c}
-.pending{color:#3498db}
-.success{color:#27ae60}
-.checkin-btn{display:inline-block;margin-top:20px;padding:12px 30px;background:#27ae60;color:#fff;border:none;border-radius:8px;font-size:1em;cursor:pointer;text-decoration:none}
-.checkin-btn:active{background:#219a52}
-.warn{color:#e67e22}
-.name{font-size:.9em;color:#666;margin-top:10px}
+h1{font-size:1.3em;margin-bottom:20px;color:#27ae60}
+.info{font-size:1.1em;margin:20px 0;line-height:1.8;color:#333}
+.sub{font-size:.9em;color:#888;margin-top:15px}
 </style>
 </head>
 <body>
 <div class="card" id="card">
 <div class="logo">澤田知可子 うたぐすりコンサート 2026</div>
-<div class="loading" id="content">読み込み中...</div>
+<h1>お席は当日発券されます</h1>
+<div class="info">
+当日、受付にてQRコードをご提示ください。
 </div>
-
-<script>
-var SHEET_ID = '1Ut6VmPQPLXhHCduh4w01ccwpYP95gj-O6GpT5mkhTk4';
-var SHEETS = ['7/11 KDDI', '7/12 ルネッサ'];
-var VENUE_DISPLAY = {
-  '7/11 KDDI':    'KDDI維新ホール（山口市）',
-  '7/12 ルネッサ': 'ルネッサながと（長門市）'
-};
-
-function getParam(name) {
-  var url = new URL(window.location.href);
-  return url.searchParams.get(name);
-}
-
-function showContent(html, titleColor) {
-  document.getElementById('content').innerHTML = html;
-  if (titleColor) {
-    var h1 = document.querySelector('h1');
-    if (h1) h1.style.color = titleColor;
-  }
-}
-
-function fetchSheet() {
-  var id = getParam('id');
-  var mode = getParam('mode') || 'info';
-
-  if (!id) {
-    showContent('<h1 class="error">エラー</h1><p>チケット番号が指定されていません。</p>');
-    return;
-  }
-
-  // Search across both day sheets by random QR_ID (column W)
-  searchSheets(SHEETS, id, mode);
-}
-
-function searchSheets(sheetList, id, mode, idx) {
-  idx = idx || 0;
-  if (idx >= sheetList.length) {
-    showContent('<h1 class="error">エラー</h1><p>チケットが見つかりませんでした。</p>');
-    return;
-  }
-  var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
-    '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(sheetList[idx]) +
-    '&tq=' + encodeURIComponent("SELECT * WHERE W = '" + id + "'");
-
-  fetch(url)
-    .then(function(r) { return r.text(); })
-    .then(function(text) {
-      var json = JSON.parse(text.match(/\{.*\}/s)[0]);
-      if (!json.table || !json.table.rows || json.table.rows.length === 0) {
-        searchSheets(sheetList, id, mode, idx + 1);
-        return;
-      }
-      var row = json.table.rows[0].c;
-      var ticket = {
-        no: val(row[3]),       // D: No.
-        rowNum: val(row[4]),   // E: 列
-        seatNum: val(row[5]),  // F: 席
-        seatType: val(row[6]), // G: 種別
-        name: val(row[7]),     // H: 予約者名
-        venue: VENUE_DISPLAY[sheetList[idx]] || sheetList[idx], // 正式会場名
-        checkinTime: val(row[21]) // V: チェックイン
-      };
-      if (mode === 'checkin') {
-        showCheckin(ticket);
-      } else {
-        showInfo(ticket);
-      }
-    })
-    .catch(function() {
-      searchSheets(sheetList, id, mode, idx + 1);
-    });
-}
-
-function val(cell) {
-  if (!cell) return '';
-  return cell.v !== null && cell.v !== undefined ? String(cell.v) : '';
-}
-
-function showInfo(t) {
-  if (!t.seatNum) {
-    showContent(
-      '<h1 class="pending">チケット No.' + t.no + '</h1>' +
-      '<div class="info">' +
-      '座席はまだ確定しておりません。<br>確定次第、こちらのページに表示されます。' +
-      '<br><br>会場: <span class="venue">' + t.venue + '</span>' +
-      '</div>'
-    );
-    return;
-  }
-
-  var seat = '';
-  if (t.rowNum && t.seatNum) {
-    seat = t.rowNum + '列 ' + t.seatNum + '番';
-  } else if (t.seatNum) {
-    seat = t.seatNum;
-  }
-
-  showContent(
-    '<h1 class="success">チケット No.' + t.no + '</h1>' +
-    '<div class="info">' +
-    '会場: <span class="venue">' + t.venue + '</span><br>' +
-    '座席: <span class="seat">' + seat + '</span>' +
-    '</div>'
-  );
-}
-
-function showCheckin(t) {
-  if (t.checkinTime) {
-    showContent(
-      '<h1 class="warn">重複スキャン</h1>' +
-      '<div class="info">' +
-      'チケット No.' + t.no + ' は既にチェックイン済みです。<br>' +
-      'チェックイン時刻: ' + t.checkinTime + '<br>' +
-      '会場: ' + t.venue + '<br>' +
-      (t.seatType ? '席種: ' + t.seatType + '<br>' : '') +
-      (t.name ? '予約者: ' + t.name : '') +
-      '</div>'
-    );
-    return;
-  }
-
-  var seat = '';
-  if (t.rowNum && t.seatNum) seat = t.rowNum + '列 ' + t.seatNum + '番';
-  else if (t.seatNum) seat = t.seatNum;
-
-  showContent(
-    '<h1 class="success">チケット No.' + t.no + '</h1>' +
-    '<div class="info">' +
-    '会場: <span class="venue">' + t.venue + '</span><br>' +
-    (t.seatType ? '席種: <b>' + t.seatType + '</b><br>' : '') +
-    (seat ? '座席: <span class="seat">' + seat + '</span><br>' : '') +
-    (t.name ? '<div class="name">予約者: ' + t.name + '</div>' : '') +
-    '</div>' +
-    '<p style="margin-top:15px;color:#888;font-size:.85em">チェックインは受付スタッフが処理します</p>'
-  );
-}
-
-fetchSheet();
-</script>
+<div class="sub">係員がご案内いたします。</div>
+</div>
 </body>
 </html>
